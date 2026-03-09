@@ -37,6 +37,8 @@ import { Badge } from '@/components/ui/badge';
 import { AddFamilyDialog } from '@/components/dashboard/add-family-dialog';
 import { FamilyMembersDialog } from '@/components/dashboard/family-members-dialog';
 import { AddMemberDialog } from '@/components/dashboard/add-member-dialog';
+import { BulkUploadDialog } from '@/components/dashboard/bulk-upload-dialog';
+import { Upload } from 'lucide-react';
 
 export default function DirectoryPage() {
     const [families, setFamilies] = useState<Family[]>([]);
@@ -45,6 +47,7 @@ export default function DirectoryPage() {
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [isMembersOpen, setIsMembersOpen] = useState(false);
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+    const [isBulkOpen, setIsBulkOpen] = useState(false);
 
     const fetchFamilies = async () => {
         try {
@@ -89,12 +92,22 @@ export default function DirectoryPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">Family Directory</h2>
                     <p className="text-muted-foreground">Manage and view households in the Mahallu community.</p>
                 </div>
-                <AddFamilyDialog onSuccess={fetchFamilies}>
-                    <Button className="bg-mahallu-primary hover:bg-mahallu-dark text-white rounded-xl h-11 px-6 shadow-sm flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add New Family
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        className="rounded-xl h-11 px-4 border-slate-200 text-mahallu-dark hover:bg-mahallu-light hover:border-mahallu-primary/30"
+                        onClick={() => setIsBulkOpen(true)}
+                    >
+                        <Upload className="h-4 w-4 mr-2 text-mahallu-primary" />
+                        Upload CSV
                     </Button>
-                </AddFamilyDialog>
+                    <AddFamilyDialog onSuccess={fetchFamilies}>
+                        <Button className="bg-mahallu-primary hover:bg-mahallu-dark text-white rounded-xl h-11 px-6 shadow-sm flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Family
+                        </Button>
+                    </AddFamilyDialog>
+                </div>
             </div>
 
             <div className="card-premium overflow-hidden">
@@ -236,6 +249,13 @@ export default function DirectoryPage() {
                         }}
                     />
                 </>
+            )}
+
+            {isBulkOpen && (
+                <BulkUploadDialog
+                    onSuccess={() => { fetchFamilies(); }}
+                    onClose={() => setIsBulkOpen(false)}
+                />
             )}
         </div>
     );
