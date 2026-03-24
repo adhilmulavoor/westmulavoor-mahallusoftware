@@ -1,6 +1,3 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -22,127 +19,99 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export default function LandingPage() {
-    const [notices, setNotices] = useState<PublicNotice[]>([]);
-    const [committee, setCommittee] = useState<CommitteeMember[]>([]);
-    const [loading, setLoading] = useState(true);
+export const revalidate = 60;
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+export default async function LandingPage() {
+    const { data: noticesData } = await supabase
+        .from('public_notices')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-    const fetchData = async () => {
-        setLoading(true);
-        await Promise.all([fetchNotices(), fetchCommittee()]);
-        setLoading(false);
-    };
+    const notices = noticesData || [];
 
-    const fetchNotices = async () => {
-        const { data, error } = await supabase
-            .from('public_notices')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false });
+    const { data: committeeData } = await supabase
+        .from('committee_members')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
 
-        if (!error && data) setNotices(data);
-    };
-
-    const fetchCommittee = async () => {
-        const { data, error } = await supabase
-            .from('committee_members')
-            .select('*')
-            .eq('is_active', true)
-            .order('display_order', { ascending: true });
-
-        if (!error && data) setCommittee(data);
-    };
+    const committee = committeeData || [];
 
     return (
         <div className="min-h-screen bg-slate-50 overflow-x-hidden">
             {/* Navigation */}
             <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-mahallu-primary rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg ring-4 ring-mahallu-light">
-                            M
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-center">
+                    <Link href="/" className="flex items-center gap-3 sm:gap-4 hover:opacity-80 transition-opacity">
+                        <div className="relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-full overflow-hidden shadow-sm border border-slate-100">
+                            <Image src="/logo.png" alt="West Mulavoor Mahallu Jamaath" fill className="object-cover" />
                         </div>
-                        <span className="text-xl font-black text-mahallu-dark tracking-tight">MAHALLU <span className="text-mahallu-primary">PRO</span></span>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-8">
-                        <Link href="#notice-board" className="text-sm font-bold text-slate-600 hover:text-mahallu-primary transition-colors">Notice Board</Link>
-                        <Link href="#contact" className="text-sm font-bold text-slate-600 hover:text-mahallu-primary transition-colors">Contact</Link>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <Link href="/login">
-                            <Button variant="outline" className="hidden sm:flex border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl h-11 px-6">
-                                Member Login
-                            </Button>
-                        </Link>
-                        <Link href="/login">
-                            <Button className="bg-mahallu-dark hover:bg-black text-white font-bold rounded-xl h-11 px-6 shadow-xl transition-all hover:scale-105 active:scale-95">
-                                Admin Portal
-                            </Button>
-                        </Link>
-                    </div>
+                        <span className="text-[18px] sm:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap">WEST MULAVOOR <span className="text-mahallu-primary">MAHALL</span></span>
+                    </Link>
                 </div>
             </nav>
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-left-8 duration-700">
-                            <Badge className="bg-mahallu-light text-mahallu-dark border-mahallu-primary/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex w-fit items-center gap-2">
-                                <span className="flex h-2 w-2 rounded-full bg-mahallu-primary animate-pulse" />
-                                Official Management Portal
+                    <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+                        <div className="order-2 lg:order-1 space-y-8 max-w-2xl animate-in fade-in slide-in-from-left-8 duration-700">
+                            <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-100 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest flex w-fit items-center gap-2">
+                                <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                                OFFICIAL WEST MULAVOOR MAHALL PORTAL
                             </Badge>
 
-                            <h1 className="text-6xl lg:text-7xl font-black text-mahallu-dark leading-[1.1] tracking-tighter">
-                                Modernizing Our <br />
-                                <span className="text-mahallu-primary italic bg-gradient-to-r from-mahallu-primary to-emerald-600 bg-clip-text text-transparent">Community</span> Care.
+                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-[#1a5b40] leading-[1.05] tracking-tighter">
+                                Empowering Our <br />
+                                Community Care.
                             </h1>
 
-                            <p className="text-xl text-slate-600 leading-relaxed font-medium max-w-xl">
-                                Seamlessly manage accounts, certificates, and community welfare with our digital platform. Building a stronger, more connected Mahallu.
+                            <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-medium max-w-xl">
+                                Seamlessly manage accounts, memberships, and community welfare for West Mulavoor Mahall with our digital platform. Building a stronger, more connected community.
                             </p>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                                <Link href="/login" className="w-full sm:w-auto">
-                                    <Button size="lg" className="h-14 px-10 text-lg font-black rounded-2xl bg-mahallu-primary hover:bg-mahallu-dark text-white shadow-2xl shadow-mahallu-primary/30 w-full transition-all hover:-translate-y-1">
-                                        Access Dashboard <ChevronRight className="ml-2 h-5 w-5" />
-                                    </Button>
-                                </Link>
-                                <Link href="#notice-board" className="w-full sm:w-auto">
-                                    <Button variant="ghost" size="lg" className="h-14 px-10 text-lg font-bold rounded-2xl text-slate-700 hover:bg-slate-100 w-full border border-transparent hover:border-slate-200">
-                                        View Notices
-                                    </Button>
-                                </Link>
+                            <div className="flex flex-col gap-3 w-full max-w-md">
+                                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 pt-2">
+                                    <Link href="/login?type=admin" className="w-full sm:w-auto flex-1">
+                                        <Button size="lg" className="h-14 px-6 text-base font-bold rounded-xl bg-[#1d8253] hover:bg-[#166841] text-white w-full transition-all shadow-md">
+                                            Admin Login <ShieldCheck className="ml-2 h-5 w-5" />
+                                        </Button>
+                                    </Link>
+                                    <Link href="/login?type=member" className="w-full sm:w-auto flex-1">
+                                        <Button size="lg" className="h-14 px-6 text-base font-bold rounded-xl bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50 w-full transition-all shadow-sm">
+                                            Member Login <User className="ml-2 h-5 w-5" />
+                                        </Button>
+                                    </Link>
+                                </div>
+
+                                <div className="pt-3 text-[13px] font-semibold text-slate-400 text-center w-full">
+                                    Created by <a href="https://www.instagram.com/ad.x_il/" target="_blank" rel="noopener noreferrer" className="font-bold text-mahallu-primary hover:text-[#1d8253] transition-colors">adhilmulavoor</a>
+                                </div>
                             </div>
 
-                            <div className="flex items-center gap-8 pt-8 border-t border-slate-200/60">
-                                <div className="space-y-1">
-                                    <div className="text-2xl font-black text-mahallu-dark">500+</div>
-                                    <div className="text-sm font-bold text-slate-500 uppercase">Families</div>
+                            <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-12 pt-6 w-full">
+                                <div>
+                                    <div className="text-2xl sm:text-3xl font-black text-slate-900">200+</div>
+                                    <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">FAMILIES</div>
                                 </div>
-                                <div className="h-10 w-[1px] bg-slate-200" />
-                                <div className="space-y-1">
-                                    <div className="text-2xl font-black text-mahallu-dark">2.4k</div>
-                                    <div className="text-sm font-bold text-slate-500 uppercase">Members</div>
+                                <div className="h-8 w-[2px] bg-slate-200" />
+                                <div>
+                                    <div className="text-2xl sm:text-3xl font-black text-slate-900">1.0k</div>
+                                    <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">MEMBERS</div>
                                 </div>
-                                <div className="h-10 w-[1px] bg-slate-200" />
-                                <div className="space-y-1">
-                                    <div className="text-2xl font-black text-mahallu-dark">10k+</div>
-                                    <div className="text-sm font-bold text-slate-500 uppercase">Records</div>
+                                <div className="h-8 w-[2px] bg-slate-200" />
+                                <div>
+                                    <div className="text-2xl sm:text-3xl font-black text-slate-900">5k+</div>
+                                    <div className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">RECORDS</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-200 h-[300px] sm:h-[400px] lg:h-[600px] w-full mt-8 lg:mt-0">
+                        <div className="order-1 lg:order-2 relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-200 h-[300px] sm:h-[400px] lg:h-[600px] w-full">
                             <div className="relative h-full w-full rounded-[24px] md:rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(5,150,105,0.25)] border-[6px] md:border-[12px] border-white">
                                 <Image
-                                    src="/masjid-new-final.jpg"
+                                    src="/masjid-new-v2.jpg"
                                     alt="Central Juma Masjid"
                                     fill
                                     className="object-cover transition-transform duration-700 hover:scale-105"
@@ -164,6 +133,8 @@ export default function LandingPage() {
             </section>
 
 
+
+
             {/* Notice Board Section */}
             <section id="notice-board" className="py-24 bg-white relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -180,11 +151,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {loading ? (
-                            Array(3).fill(0).map((_, i) => (
-                                <div key={i} className="h-[300px] rounded-[32px] bg-slate-50 animate-pulse border border-slate-100" />
-                            ))
-                        ) : notices.length === 0 ? (
+                        {notices.length === 0 ? (
                             <div className="col-span-full py-20 text-center space-y-4">
                                 <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
                                     <Info className="h-10 w-10" />
@@ -253,21 +220,14 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {loading ? (
-                            Array(4).fill(0).map((_, i) => (
-                                <div key={i} className="h-64 bg-white rounded-[32px] animate-pulse border border-slate-100" />
-                            ))
-                        ) : committee.length === 0 ? (
+                        {committee.length === 0 ? (
                             <div className="col-span-full py-20 text-center space-y-4 bg-white rounded-[40px] border border-dashed border-slate-200">
                                 <Users className="h-12 w-12 text-slate-300 mx-auto" />
                                 <h3 className="text-xl font-black text-slate-400">Committee details coming soon</h3>
                             </div>
                         ) : (
                             committee.map((member) => (
-                                <div key={member.id} className="group p-8 rounded-[32px] bg-white border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center">
-                                    <div className="h-20 w-20 bg-mahallu-light text-mahallu-primary rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                                        <User className="h-10 w-10" />
-                                    </div>
+                                <div key={member.id} className="group p-8 sm:py-12 rounded-[32px] bg-white border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-center flex flex-col justify-center min-h-[160px]">
                                     <div className="space-y-2">
                                         <h3 className="text-xl font-black text-mahallu-dark group-hover:text-mahallu-primary transition-colors">
                                             {member.name}
@@ -291,30 +251,31 @@ export default function LandingPage() {
 
             {/* Contact Footer Area */}
             <footer id="contact" className="bg-mahallu-dark text-white py-24">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-20">
-                        <div className="col-span-1 lg:col-span-1.5 space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-mahallu-dark font-black text-xl shadow-lg">
-                                    M
+                <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-8 border-none outline-none">
+                        <div className="space-y-6">
+                            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
+                                <div className="relative h-12 w-12 flex-shrink-0 rounded-full overflow-hidden shadow-lg border border-white/20 bg-white">
+                                    <Image src="/logo.png" alt="West Mulavoor Mahallu Jamaath" fill className="object-cover" />
                                 </div>
-                                <span className="text-xl font-black text-white tracking-tight">MAHALLU <span className="text-mahallu-primary">PRO</span></span>
-                            </div>
-                            <p className="text-mahallu-light/60 font-medium leading-relaxed text-lg max-w-sm">
+                                <span className="text-xl leading-[1.1] font-black text-white tracking-tight">WEST MULAVOOR <br className="lg:hidden" /><span className="text-mahallu-primary">MAHALL</span></span>
+                            </Link>
+                            <p className="text-mahallu-light/60 font-medium leading-relaxed text-base max-w-sm">
                                 Dedicated to the social, spiritual, and systemic excellence of our mahallu community.
                             </p>
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-6 lg:mx-auto">
                             <h4 className="text-lg font-black uppercase tracking-widest text-mahallu-primary">Quick Links</h4>
                             <ul className="space-y-4">
-                                <li><Link href="/login" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Member Portal</Link></li>
-                                <li><Link href="/login" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Admin Login</Link></li>
-                                <li><Link href="#notice-board" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Latest Notices</Link></li>
+                                <li><Link href="/" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Home</Link></li>
+                                <li><Link href="#notice-board" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Notice Board</Link></li>
+                                <li><Link href="#committee" className="text-mahallu-light/80 hover:text-white font-bold transition-colors">Committee Members</Link></li>
+                                <li><Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">Login Portal &rarr;</Link></li>
                             </ul>
                         </div>
 
-                        <div className="space-y-6 col-span-1 lg:col-span-1.5">
+                        <div className="space-y-6 lg:justify-self-end">
                             <h4 className="text-lg font-black uppercase tracking-widest text-mahallu-primary">Contact Us</h4>
                             <div className="space-y-5">
                                 <div className="flex items-start gap-4">
@@ -339,9 +300,13 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    <div className="pt-20 mt-20 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <p className="text-mahallu-light/40 font-bold text-sm">© 2025 Mahallu Pro. All rights reserved.</p>
-                        <div className="flex gap-8 text-sm font-bold text-mahallu-light/40">
+                    <div className="pt-20 mt-20 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-6">
+                        <p className="text-mahallu-light/40 font-bold text-sm flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                            <span>© 2025 Mahallu Pro. All rights reserved.</span>
+                            <span className="hidden sm:inline text-white/20">|</span>
+                            <span>Powered by <a href="https://www.instagram.com/ad.x_il/" target="_blank" rel="noopener noreferrer" className="text-mahallu-primary hover:text-white transition-colors">adhilmulavoor</a></span>
+                        </p>
+                        <div className="flex gap-6 sm:gap-8 text-sm font-bold text-mahallu-light/40">
                             <Link href="#" className="hover:text-mahallu-primary transition-colors">Privacy Policy</Link>
                             <Link href="#" className="hover:text-mahallu-primary transition-colors">Terms of Use</Link>
                         </div>

@@ -33,12 +33,20 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Dialog,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { AddFamilyDialog } from '@/components/dashboard/add-family-dialog';
+import { EditFamilyDialog } from '@/components/dashboard/edit-family-dialog';
 import { FamilyMembersDialog } from '@/components/dashboard/family-members-dialog';
 import { AddMemberDialog } from '@/components/dashboard/add-member-dialog';
 import { BulkUploadDialog } from '@/components/dashboard/bulk-upload-dialog';
-import { Upload } from 'lucide-react';
+import { DeleteFamilyDialog } from '@/components/dashboard/delete-family-dialog';
+import { HistoricalPaymentDialog } from '@/components/dashboard/historical-payment-dialog';
+import { AddSponsorshipDialog } from '@/components/dashboard/add-sponsorship-dialog';
+import { Upload, History, HandHeart } from 'lucide-react';
 
 export default function DirectoryPage() {
     const [families, setFamilies] = useState<Family[]>([]);
@@ -47,7 +55,11 @@ export default function DirectoryPage() {
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [isMembersOpen, setIsMembersOpen] = useState(false);
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
     const [isBulkOpen, setIsBulkOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isHistoricalOpen, setIsHistoricalOpen] = useState(false);
+    const [isAddSponsorshipOpen, setIsAddSponsorshipOpen] = useState(false);
 
     const fetchFamilies = async () => {
         try {
@@ -55,10 +67,14 @@ export default function DirectoryPage() {
             const { data, error } = await supabase
                 .from('families')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('family_id', { ascending: true });
 
             if (error) throw error;
-            setFamilies(data || []);
+            
+            const sortedData = (data || []).sort((a, b) => 
+                (a.family_id || '').localeCompare(b.family_id || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            setFamilies(sortedData);
         } catch (error: any) {
             console.error('Error fetching families:', error.message || error);
         } finally {
@@ -83,6 +99,26 @@ export default function DirectoryPage() {
     const handleAddMember = (family: Family) => {
         setSelectedFamily(family);
         setIsAddMemberOpen(true);
+    };
+
+    const handleEditDetails = (family: Family) => {
+        setSelectedFamily(family);
+        setIsEditOpen(true);
+    };
+
+    const handleDeleteFamily = (family: Family) => {
+        setSelectedFamily(family);
+        setIsDeleteOpen(true);
+    };
+
+    const handleHistoricalPayments = (family: Family) => {
+        setSelectedFamily(family);
+        setIsHistoricalOpen(true);
+    };
+
+    const handleAddSponsorship = (family: Family) => {
+        setSelectedFamily(family);
+        setIsAddSponsorshipOpen(true);
     };
 
     return (
@@ -165,8 +201,7 @@ export default function DirectoryPage() {
                                 filteredFamilies.map((family) => (
                                     <TableRow
                                         key={family.id}
-                                        className="group hover:bg-mahallu-light/30 transition-colors border-slate-50 cursor-pointer"
-                                        onClick={() => handleViewMembers(family)}
+                                        className="group hover:bg-mahallu-light/30 transition-colors border-slate-50"
                                     >
                                         <TableCell className="font-bold py-4 pl-8">
                                             <Badge variant="outline" className="rounded-lg px-2.5 py-0.5 border-mahallu-primary/20 bg-mahallu-light/50 text-mahallu-primary font-mono text-xs">
@@ -191,7 +226,7 @@ export default function DirectoryPage() {
                                             ) : '-'}
                                         </TableCell>
                                         <TableCell className="text-right py-4 pr-8" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -210,10 +245,16 @@ export default function DirectoryPage() {
                                                         <DropdownMenuItem onClick={() => handleAddMember(family)} className="rounded-lg gap-2 cursor-pointer">
                                                             <Plus className="h-4 w-4" /> Add Member
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer">
+                                                        <DropdownMenuItem onClick={() => handleEditDetails(family)} className="rounded-lg gap-2 cursor-pointer">
                                                             <Edit className="h-4 w-4" /> Edit Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer text-destructive focus:text-destructive">
+                                                        <DropdownMenuItem onClick={() => handleAddSponsorship(family)} className="rounded-lg gap-2 cursor-pointer text-blue-600 focus:text-blue-700">
+                                                            <HandHeart className="h-4 w-4" /> Add Sponsorship
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleHistoricalPayments(family)} className="rounded-lg gap-2 cursor-pointer text-emerald-600 focus:text-emerald-700">
+                                                            <History className="h-4 w-4" /> Historical Payments
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDeleteFamily(family)} className="rounded-lg gap-2 cursor-pointer text-destructive focus:text-destructive">
                                                             <Trash2 className="h-4 w-4" /> Delete Family
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -248,6 +289,42 @@ export default function DirectoryPage() {
                             setIsMembersOpen(true);
                         }}
                     />
+                    <EditFamilyDialog
+                        family={selectedFamily}
+                        open={isEditOpen}
+                        onOpenChange={setIsEditOpen}
+                        onSuccess={() => {
+                            fetchFamilies();
+                            setIsEditOpen(false);
+                        }}
+                    />
+                    <DeleteFamilyDialog
+                        family={selectedFamily}
+                        open={isDeleteOpen}
+                        onOpenChange={setIsDeleteOpen}
+                        onSuccess={() => {
+                            fetchFamilies();
+                            setIsDeleteOpen(false);
+                        }}
+                    />
+                    <HistoricalPaymentDialog
+                        family={selectedFamily}
+                        open={isHistoricalOpen}
+                        onOpenChange={setIsHistoricalOpen}
+                        onSuccess={() => { }}
+                    />
+                    {isAddSponsorshipOpen && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <AddSponsorshipDialog
+                                onSuccess={() => setIsAddSponsorshipOpen(false)}
+                                defaultFamilyId={selectedFamily.id}
+                            >
+                                <Dialog open={isAddSponsorshipOpen} onOpenChange={setIsAddSponsorshipOpen}>
+                                    <DialogTrigger asChild><div /></DialogTrigger>
+                                </Dialog>
+                            </AddSponsorshipDialog>
+                        </div>
+                    )}
                 </>
             )}
 

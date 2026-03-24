@@ -11,8 +11,9 @@ interface ParsedFamily {
     address: string;
     phone: string;
     subscription_amount: number;
+    legacy_arrears: number;
+    subscription_start_date: string;
     ward_number: string;
-    subscription_start_date?: string;
 }
 
 interface UploadResult {
@@ -21,12 +22,12 @@ interface UploadResult {
     errors: string[];
 }
 
-const SAMPLE_CSV = `house_name,family_id,address,phone,subscription_amount,ward_number,subscription_start_date
-Al-Rahmat House,MAH-001,Ward 5 - Main Road,9876543210,100,5,2025-01-01
-Noor Villa,MAH-002,Ward 3 - North Street,9876543211,100,3,2025-01-01
-Barakah Manzil,MAH-003,Ward 7 - East Side,9876543212,150,7,2025-01-01
-Al-Ameen Residency,MAH-004,Ward 2 - Garden Lane,9876543213,100,2,2025-01-01
-Salam House,MAH-005,Ward 5 - Riverside,9876543214,200,5,2025-01-01`;
+const SAMPLE_CSV = `house_name,family_id,address,phone,subscription_amount,legacy_arrears,subscription_start_date,ward_number
+Al-Rahmat House,MAH-001,Ward 5 - Main Road,9876543210,100,500,2025-01-01,5
+Noor Villa,MAH-002,Ward 3 - North Street,9876543211,100,0,2025-01-01,3
+Barakah Manzil,MAH-003,Ward 7 - East Side,9876543212,150,1200,2025-01-01,7
+Al-Ameen Residency,MAH-004,Ward 2 - Garden Lane,9876543213,100,0,2025-01-01,2
+Salam House,MAH-005,Ward 5 - Riverside,9876543214,200,250,2025-01-01,5`;
 
 function downloadSampleCSV() {
     const blob = new Blob([SAMPLE_CSV], { type: 'text/csv' });
@@ -57,8 +58,9 @@ function parseCSV(text: string): ParsedFamily[] {
                 address: row.address || '',
                 phone: row.phone || '',
                 subscription_amount: Number(row.subscription_amount) || 100,
+                legacy_arrears: Number(row.legacy_arrears) || 0,
+                subscription_start_date: row.subscription_start_date || '2025-01-01',
                 ward_number: row.ward_number || '1',
-                subscription_start_date: row.subscription_start_date || new Date().toISOString().slice(0, 10),
             });
         }
     }
@@ -106,11 +108,10 @@ export function BulkUploadDialog({ onSuccess, onClose }: Props) {
                 house_name: family.house_name,
                 family_id: family.family_id,
                 address: family.address,
-                phone: family.phone,
+                contact_number: family.phone,
                 subscription_amount: family.subscription_amount,
-                ward_number: family.ward_number,
+                legacy_arrears: family.legacy_arrears,
                 subscription_start_date: family.subscription_start_date,
-                is_active: true,
             });
             if (error) {
                 errors.push(`${family.house_name}: ${error.message}`);

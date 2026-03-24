@@ -31,6 +31,9 @@ const familySchema = z.object({
     house_name: z.string().min(1, 'House name is required'),
     address: z.string().min(5, 'Address is required'),
     contact_number: z.string().optional(),
+    subscription_amount: z.coerce.number().min(0).default(100),
+    legacy_arrears: z.coerce.number().min(0).default(0),
+    subscription_start_date: z.string().default('2025-01-01'),
 });
 
 type FamilyFormValues = z.infer<typeof familySchema>;
@@ -50,12 +53,15 @@ export function AddFamilyDialog({ children, onSuccess, open: externalOpen, onOpe
     const onOpenChange = setExternalOpen ?? setInternalOpen;
 
     const form = useForm<FamilyFormValues>({
-        resolver: zodResolver(familySchema),
+        resolver: zodResolver(familySchema) as any,
         defaultValues: {
             family_id: '',
             house_name: '',
             address: '',
             contact_number: '',
+            subscription_amount: 100,
+            legacy_arrears: 0,
+            subscription_start_date: '2025-01-01',
         },
     });
 
@@ -141,6 +147,47 @@ export function AddFamilyDialog({ children, onSuccess, open: externalOpen, onOpe
                                         <FormLabel>Contact Number</FormLabel>
                                         <FormControl>
                                             <Input placeholder="+91 98765 43210" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="subscription_amount"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Monthly Rate (₹)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="100" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="legacy_arrears"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Legacy Arrears (Pre-2025)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="0" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="subscription_start_date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subscription Start Date</FormLabel>
+                                        <FormControl>
+                                            <Input type="date" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

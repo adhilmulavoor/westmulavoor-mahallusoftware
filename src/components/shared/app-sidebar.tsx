@@ -1,6 +1,6 @@
 'use client';
 
-import {
+import Image from 'next/image';import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -20,41 +20,77 @@ import {
     LogOut,
     CreditCard,
     Building2,
+    WalletCards,
+    ClockAlert,
+    Megaphone,
+    ShieldCheck,
+    Receipt,
+    User,
+    HandHeart,
+    MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-const items = [
-    { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+const adminItems = [
+    { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+    { title: 'Arrear Checker', url: '/arrear-checker', icon: ClockAlert },
     { title: 'Directory', url: '/directory', icon: Users },
+    { title: 'WhatsApp Reminders', url: '/whatsapp-reminders', icon: MessageCircle },
+    { title: 'Subscriptions', url: '/subscriptions', icon: WalletCards },
+    { title: 'Sponsorships', url: '/sponsorships', icon: HandHeart },
     { title: 'Finances', url: '/finances', icon: Wallet },
-    { title: 'Pending', url: '/pending', icon: CreditCard },
-    { title: 'Certificates', url: '/certificates', icon: FileBadge },
+    { title: 'Expenses', url: '/expenses', icon: Receipt },
+    { title: 'Announcements', url: '/notices', icon: Megaphone },
+    { title: 'Committee', url: '/committee', icon: ShieldCheck },
 ];
+
+const memberItems = [
+    { title: 'Dashboard', url: '/member-details', icon: LayoutDashboard },
+    { title: 'Announcements', url: '/notices', icon: Megaphone },
+];
+
+import { useAuth } from '@/hooks/use-auth';
 
 export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const { role, loading } = useAuth();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         router.push('/login');
     };
 
+    const items = role === 'admin' ? adminItems : memberItems;
+
+    if (loading) return (
+        <Sidebar>
+            <SidebarHeader className="border-b p-5">
+                <div className="animate-pulse flex items-center gap-3">
+                    <div className="h-9 w-9 bg-slate-200 rounded-xl"></div>
+                    <div className="h-4 w-24 bg-slate-200 rounded"></div>
+                </div>
+            </SidebarHeader>
+        </Sidebar>
+    );
+
     return (
         <Sidebar>
             <SidebarHeader className="border-b p-5">
-                <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-mahallu-primary flex items-center justify-center shadow-sm">
-                        <Building2 className="h-5 w-5 text-white" />
+                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <div className="relative h-10 w-10 min-w-10 rounded-full overflow-hidden shadow-sm border border-slate-200 bg-white">
+                        <Image src="/logo.png" alt="Mahallu Logo" fill className="object-cover" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-bold text-sm text-mahallu-dark leading-tight">Mahallu Admin</span>
+                        <span className="font-bold text-sm leading-tight text-white">
+                            {role === 'admin' ? 'Admin' : 'Member Portal'}
+                        </span>
                         <span className="text-[10px] text-muted-foreground font-medium">West Mulavoor</span>
                     </div>
-                </div>
+                </Link>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>

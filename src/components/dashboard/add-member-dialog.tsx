@@ -57,7 +57,7 @@ export function AddMemberDialog({ family, open, onOpenChange, onSuccess }: AddMe
     const [loading, setLoading] = useState(false);
 
     const form = useForm<MemberFormValues>({
-        resolver: zodResolver(memberSchema),
+        resolver: zodResolver(memberSchema) as any,
         defaultValues: {
             member_id: '',
             name: '',
@@ -217,7 +217,7 @@ export function AddMemberDialog({ family, open, onOpenChange, onSuccess }: AddMe
                                             <FormLabel className="text-sm font-semibold text-mahallu-dark cursor-pointer">
                                                 Is this person the Head of Family?
                                             </FormLabel>
-                                            <p className="text-xs text-muted-foreground">This helps in organizing hierarchy and certificates.</p>
+                                            <p className="text-xs text-muted-foreground">This helps in organizing hierarchy.</p>
                                         </div>
                                     </FormItem>
                                 )}

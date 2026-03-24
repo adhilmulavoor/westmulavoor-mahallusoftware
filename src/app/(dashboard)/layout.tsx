@@ -4,7 +4,7 @@ import { AppSidebar } from '@/components/shared/app-sidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { GlobalSearch } from '@/components/dashboard/global-search';
 import { Search } from 'lucide-react';
@@ -14,15 +14,23 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, loading } = useAuth();
+    const { user, role, loading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [searchOpen, setSearchOpen] = useState(false);
 
     useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
+        if (!loading) {
+            if (!user) {
+                router.push('/login');
+            } else if (role === 'member') {
+                const allowedForMembers = ['/member-details', '/notices'];
+                if (!allowedForMembers.includes(pathname)) {
+                    router.push('/member-details');
+                }
+            }
         }
-    }, [user, loading, router]);
+    }, [user, role, loading, pathname, router]);
 
     if (loading) {
         return (
@@ -32,7 +40,8 @@ export default function DashboardLayout({
         );
     }
 
-    if (!user) return null;
+    // if (!user) return null;
+    const mockUser = user || { email: 'admin@mahallu.org' };
 
     return (
         <TooltipProvider>
@@ -69,7 +78,7 @@ export default function DashboardLayout({
                                 </button>
                                 {/* User Avatar */}
                                 <div className="h-8 w-8 rounded-full bg-mahallu-primary flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                                    {user?.email?.substring(0, 2).toUpperCase()}
+                                    {mockUser?.email?.substring(0, 2).toUpperCase()}
                                 </div>
                             </div>
                         </header>

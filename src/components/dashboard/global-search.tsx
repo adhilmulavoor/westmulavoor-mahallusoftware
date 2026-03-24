@@ -9,7 +9,7 @@ interface SearchResult {
     id: string;
     title: string;
     subtitle: string;
-    type: 'family' | 'member' | 'transaction' | 'certificate';
+    type: 'family' | 'member' | 'transaction';
     href: string;
 }
 
@@ -17,7 +17,6 @@ const TYPE_CONFIG = {
     family: { icon: Home, color: 'text-mahallu-primary', bg: 'bg-mahallu-light', label: 'Family' },
     member: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', label: 'Member' },
     transaction: { icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Transaction' },
-    certificate: { icon: FileBadge, color: 'text-purple-600', bg: 'bg-purple-50', label: 'Certificate' },
 };
 
 export function GlobalSearch({ onClose }: { onClose?: () => void }) {
@@ -67,18 +66,16 @@ export function GlobalSearch({ onClose }: { onClose?: () => void }) {
             setLoading(true);
             const q = query.toLowerCase();
             try {
-                const [families, members, transactions, certs] = await Promise.all([
+                const [families, members, transactions] = await Promise.all([
                     supabase.from('families').select('id, house_name, family_id').ilike('house_name', `%${q}%`).limit(4),
                     supabase.from('members').select('id, name, member_id').ilike('name', `%${q}%`).limit(4),
                     supabase.from('transactions').select('id, receipt_number, amount, category').ilike('category', `%${q}%`).limit(4),
-                    supabase.from('certificates').select('id, certificate_id, type').ilike('type', `%${q}%`).limit(3),
                 ]);
 
                 const combined: SearchResult[] = [
                     ...(families.data || []).map(f => ({ id: f.id, title: f.house_name, subtitle: `ID: ${f.family_id}`, type: 'family' as const, href: '/directory' })),
                     ...(members.data || []).map(m => ({ id: m.id, title: m.name, subtitle: `Member ID: ${m.member_id}`, type: 'member' as const, href: '/directory' })),
                     ...(transactions.data || []).map(t => ({ id: t.id, title: `Receipt #${t.receipt_number}`, subtitle: `${t.category} • ₹${Number(t.amount).toLocaleString()}`, type: 'transaction' as const, href: '/finances' })),
-                    ...(certs.data || []).map(c => ({ id: c.id, title: `${c.type} Certificate`, subtitle: `ID: ${c.certificate_id}`, type: 'certificate' as const, href: '/certificates' })),
                 ];
                 setResults(combined);
                 setSelected(0);
