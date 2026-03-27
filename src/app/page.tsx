@@ -112,7 +112,7 @@ export default async function LandingPage() {
                             <div className="relative h-full w-full rounded-[24px] md:rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(5,150,105,0.25)] border-[6px] md:border-[12px] border-white">
                                 <Image
                                     src="/masjid-new-v2.jpg"
-                                    alt="Central Juma Masjid"
+                                    alt="West Mulavoor Juma Masjid"
                                     fill
                                     className="object-cover transition-transform duration-700 hover:scale-105"
                                     priority
