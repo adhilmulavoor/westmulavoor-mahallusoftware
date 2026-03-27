@@ -45,7 +45,7 @@ export default async function LandingPage() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-center">
                     <Link href="/" className="flex items-center gap-3 sm:gap-4 hover:opacity-80 transition-opacity">
                         <div className="relative h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0 rounded-full overflow-hidden shadow-sm border border-slate-100">
-                            <Image src="/logo.png" alt="West Mulavoor Mahallu Jamaath" fill className="object-cover" />
+                            <Image src="/logo.png" alt="Mahallu Management Logo" fill className="object-cover" />
                         </div>
                         <span className="text-[18px] sm:text-2xl font-black text-slate-800 tracking-tight whitespace-nowrap">WEST MULAVOOR <span className="text-mahallu-primary">MAHALL</span></span>
                     </Link>
@@ -256,7 +256,7 @@ export default async function LandingPage() {
                         <div className="space-y-6">
                             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity w-fit">
                                 <div className="relative h-12 w-12 flex-shrink-0 rounded-full overflow-hidden shadow-lg border border-white/20 bg-white">
-                                    <Image src="/logo.png" alt="West Mulavoor Mahallu Jamaath" fill className="object-cover" />
+                                    <Image src="/logo.png" alt="Mahallu Management Logo" fill className="object-cover" />
                                 </div>
                                 <span className="text-xl leading-[1.1] font-black text-white tracking-tight">WEST MULAVOOR <br className="lg:hidden" /><span className="text-mahallu-primary">MAHALL</span></span>
                             </Link>

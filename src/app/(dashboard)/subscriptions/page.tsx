@@ -134,8 +134,8 @@ export default function SubscriptionsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
-                    <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">Monthly Subscriptions</h2>
-                    <p className="text-muted-foreground">Track and collect monthly Masappadi payments from households.</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">മാസവരി</h2>
+                    <p className="text-muted-foreground">മാസവരി വിവരങ്ങളും കുടിശ്ശികയും ഇവിടെ പരിശോധിക്കാം.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" className="rounded-xl h-11 px-6 border-slate-200" onClick={fetchData}>
@@ -152,7 +152,7 @@ export default function SubscriptionsPage() {
                         <AlertCircle className="h-6 w-6" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-mahallu-primary uppercase tracking-wider">Total Outstanding Subscriptions</p>
+                        <p className="text-sm font-semibold text-mahallu-primary uppercase tracking-wider">ആകെ മാസവരി കുടിശ്ശിക</p>
                         <h3 className="text-3xl font-bold text-slate-900">₹{families.reduce((sum, f) => sum + f.arrears, 0).toLocaleString()}</h3>
                     </div>
                 </div>
@@ -201,7 +201,7 @@ export default function SubscriptionsPage() {
                                     <TableCell colSpan={4} className="h-64 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Loader2 className="h-8 w-8 animate-spin text-mahallu-primary" />
-                                            <p className="text-sm text-muted-foreground">Loading subscriptions...</p>
+                                            <p className="text-sm text-muted-foreground">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -211,7 +211,7 @@ export default function SubscriptionsPage() {
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <CreditCard className="h-8 w-8 text-slate-300" />
                                             <p className="font-semibold">All caught up!</p>
-                                            <p className="text-sm text-muted-foreground">No pending subscriptions for this criteria.</p>
+                                            <p className="text-sm text-muted-foreground">മാസവരി കുടിശ്ശികയില്ല.</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>

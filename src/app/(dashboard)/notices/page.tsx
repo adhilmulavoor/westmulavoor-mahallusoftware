@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PublicNotice } from '@/types/database';
+import { useAuth } from '@/hooks/use-auth';
 import {
     Search,
     Plus,
@@ -58,13 +59,22 @@ export default function NoticesPage() {
     const [content, setContent] = useState('');
     const [isActive, setIsActive] = useState(true);
 
+    const { role } = useAuth();
+
     const fetchNotices = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            let query = supabase
                 .from('public_notices')
                 .select('*')
                 .order('created_at', { ascending: false });
+            
+            // Only show active notices to members
+            if (role === 'member') {
+                query = query.eq('is_active', true);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setNotices(data || []);
@@ -76,8 +86,10 @@ export default function NoticesPage() {
     };
 
     useEffect(() => {
-        fetchNotices();
-    }, []);
+        if (role) {
+            fetchNotices();
+        }
+    }, [role]);
 
     const resetForm = () => {
         setTitle('');
@@ -176,15 +188,22 @@ export default function NoticesPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                     <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">Public Announcements</h2>
-                    <p className="text-muted-foreground">Manage notices and news displayed on the public landing page.</p>
+                    <p className="text-muted-foreground">
+                        {role === 'admin' 
+                            ? 'Manage notices and news displayed on the public landing page.'
+                            : 'Latest updates and announcements from the Mahallu.'
+                        }
+                    </p>
                 </div>
-                <Button
-                    onClick={() => { resetForm(); setIsDialogOpen(true); }}
-                    className="bg-mahallu-primary hover:bg-mahallu-dark text-white rounded-xl h-11 px-6 shadow-sm flex items-center gap-2"
-                >
-                    <Plus className="h-4 w-4" />
-                    New Announcement
-                </Button>
+                {role === 'admin' && (
+                    <Button
+                        onClick={() => { resetForm(); setIsDialogOpen(true); }}
+                        className="bg-mahallu-primary hover:bg-mahallu-dark text-white rounded-xl h-11 px-6 shadow-sm flex items-center gap-2"
+                    >
+                        <Plus className="h-4 w-4" />
+                        New Announcement
+                    </Button>
+                )}
             </div>
 
             {/* Content Area */}
@@ -205,43 +224,45 @@ export default function NoticesPage() {
                     <Table>
                         <TableHeader className="bg-slate-50/50">
                             <TableRow className="hover:bg-transparent border-slate-100">
-                                <TableHead className="font-bold py-5 pl-8 text-mahallu-dark">Status</TableHead>
-                                <TableHead className="font-bold py-5 text-mahallu-dark">Announcement</TableHead>
+                                {role === 'admin' && <TableHead className="font-bold py-5 pl-8 text-mahallu-dark">Status</TableHead>}
+                                <TableHead className={`font-bold py-5 text-mahallu-dark ${role !== 'admin' ? 'pl-8' : ''}`}>Announcement</TableHead>
                                 <TableHead className="font-bold py-5 text-mahallu-dark">Category</TableHead>
                                 <TableHead className="font-bold py-5 text-mahallu-dark">Date</TableHead>
-                                <TableHead className="text-right py-5 pr-8 font-bold text-mahallu-dark">Actions</TableHead>
+                                {role === 'admin' && <TableHead className="text-right py-5 pr-8 font-bold text-mahallu-dark">Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-64 text-center">
+                                    <TableCell colSpan={role === 'admin' ? 5 : 3} className="h-64 text-center">
                                         <Loader2 className="h-8 w-8 animate-spin mx-auto text-mahallu-primary" />
                                     </TableCell>
                                 </TableRow>
                             ) : filteredNotices.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-64 text-center text-muted-foreground">
+                                    <TableCell colSpan={role === 'admin' ? 5 : 3} className="h-64 text-center text-muted-foreground">
                                         No announcements found.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 filteredNotices.map((notice) => (
                                     <TableRow key={notice.id} className="hover:bg-slate-50/50 border-slate-50 transition-colors">
-                                        <TableCell className="py-5 pl-8">
-                                            <button onClick={() => toggleStatus(notice)} className="focus:outline-none">
-                                                {notice.is_active ? (
-                                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none px-3 py-1 flex items-center gap-1.5 cursor-pointer">
-                                                        <Eye className="h-3 w-3" /> Active
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-none px-3 py-1 flex items-center gap-1.5 cursor-pointer">
-                                                        <EyeOff className="h-3 w-3" /> Hidden
-                                                    </Badge>
-                                                )}
-                                            </button>
-                                        </TableCell>
-                                        <TableCell className="py-5">
+                                        {role === 'admin' && (
+                                            <TableCell className="py-5 pl-8">
+                                                <button onClick={() => toggleStatus(notice)} className="focus:outline-none">
+                                                    {notice.is_active ? (
+                                                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none px-3 py-1 flex items-center gap-1.5 cursor-pointer">
+                                                            <Eye className="h-3 w-3" /> Active
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-none px-3 py-1 flex items-center gap-1.5 cursor-pointer">
+                                                            <EyeOff className="h-3 w-3" /> Hidden
+                                                        </Badge>
+                                                    )}
+                                                </button>
+                                            </TableCell>
+                                        )}
+                                        <TableCell className={`py-5 ${role !== 'admin' ? 'pl-8' : ''}`}>
                                             <div className="flex flex-col max-w-md">
                                                 <span className="font-bold text-mahallu-dark">{notice.title}</span>
                                                 <span className="text-xs text-slate-500 line-clamp-1">{notice.content}</span>
@@ -263,16 +284,18 @@ export default function NoticesPage() {
                                                 {new Date(notice.created_at).toLocaleDateString()}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right py-5 pr-8">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button size="icon" variant="ghost" onClick={() => handleEdit(notice)} className="h-9 w-9 text-slate-400 hover:text-mahallu-primary">
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" onClick={() => handleDelete(notice.id)} className="h-9 w-9 text-slate-400 hover:text-rose-500">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                                        {role === 'admin' && (
+                                            <TableCell className="text-right py-5 pr-8">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button size="icon" variant="ghost" onClick={() => handleEdit(notice)} className="h-9 w-9 text-slate-400 hover:text-mahallu-primary">
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button size="icon" variant="ghost" onClick={() => handleDelete(notice.id)} className="h-9 w-9 text-slate-400 hover:text-rose-500">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             )}

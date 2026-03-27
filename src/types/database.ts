@@ -32,7 +32,7 @@ export type Transaction = {
     receipt_number: number;
     family_id: string;
     amount: number;
-    category: 'Monthly Subscription' | 'Sponsorship' | 'General Hadya';
+    category: 'Monthly Subscription' | 'Project Sponsorship' | 'General Hadya' | 'Legacy Arrears';
     sponsorship_id: string | null;
     transaction_date: string;
     payment_month: number | null;

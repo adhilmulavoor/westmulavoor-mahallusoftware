@@ -15,7 +15,8 @@ import {
     Phone,
     MapPin,
     ChevronRight,
-    Loader2
+    Loader2,
+    ClockAlert
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,7 @@ import { Upload, History, HandHeart } from 'lucide-react';
 export default function DirectoryPage() {
     const [families, setFamilies] = useState<Family[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [isMembersOpen, setIsMembersOpen] = useState(false);
@@ -64,19 +66,22 @@ export default function DirectoryPage() {
     const fetchFamilies = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            setError(null);
+            const { data, error: fetchError } = await supabase
                 .from('families')
                 .select('*')
                 .order('family_id', { ascending: true });
 
-            if (error) throw error;
+            if (fetchError) throw fetchError;
             
             const sortedData = (data || []).sort((a, b) => 
                 (a.family_id || '').localeCompare(b.family_id || '', undefined, { numeric: true, sensitivity: 'base' })
             );
             setFamilies(sortedData);
-        } catch (error: any) {
-            console.error('Error fetching families:', error.message || error);
+        } catch (err: any) {
+            const msg = err.message || 'Failed to fetch families. Please check your connection.';
+            setError(msg);
+            console.warn('Silent fetch error handled:', msg);
         } finally {
             setLoading(false);
         }
@@ -180,6 +185,28 @@ export default function DirectoryPage() {
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Loader2 className="h-8 w-8 animate-spin text-mahallu-primary" />
                                             <p className="text-sm text-muted-foreground">Loading family records...</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : error ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-64 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="h-16 w-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500">
+                                                <ClockAlert className="h-8 w-8" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="font-semibold text-mahallu-dark text-lg">Connection Error</p>
+                                                <p className="text-sm text-muted-foreground">{error}</p>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={fetchFamilies}
+                                                    className="mt-2 border-mahallu-primary/20 hover:bg-mahallu-light"
+                                                >
+                                                    Retry Fetching
+                                                </Button>
+                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>

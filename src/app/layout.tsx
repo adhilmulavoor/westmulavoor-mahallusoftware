@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 
 export default function RootLayout({
@@ -39,6 +40,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Toaster position="top-center" richColors />
         <InstallPrompt />
       </body>
     </html>

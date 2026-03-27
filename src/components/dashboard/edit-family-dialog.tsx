@@ -168,7 +168,7 @@ export function EditFamilyDialog({ family, open, onOpenChange, onSuccess }: Edit
                                     name="subscription_amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Monthly Rate (₹)</FormLabel>
+                                            <FormLabel>മാസവരി തുക (₹)</FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="100" {...field} />
                                             </FormControl>
@@ -195,7 +195,7 @@ export function EditFamilyDialog({ family, open, onOpenChange, onSuccess }: Edit
                                 name="subscription_start_date"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Subscription Start Date</FormLabel>
+                                        <FormLabel>മാസവരി ആരംഭിക്കുന്ന തീയതി</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
                                         </FormControl>

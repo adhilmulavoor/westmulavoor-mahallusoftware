@@ -166,14 +166,25 @@ export default function WhatsAppRemindersPage() {
             phone = '91' + phone;
         }
 
-        const message = `Assalamu Alaikum. This is a reminder from the West Mulavoor Mahallu Committee. 
+        const message = `അസ്സലാമു അലൈകും 🤝
 
-Your pending amount for *${family.house_name}* is as follows:
-- Monthly Subscriptions & Legacy: ₹${family.monthly_arrears.toLocaleString()}
-${family.sponsorship_pending > 0 ? `- Pending Sponsorships: ₹${family.sponsorship_pending.toLocaleString()}\n` : ''}
-*Total Pending: ₹${family.total_arrears.toLocaleString()}*
+പ്രിയപ്പെട്ട ${family.house_name},
 
-Please clear the dues at your earliest convenience. Thank you.`;
+വെസ്റ്റ് മുളവൂർ മഹല്ല് ജമാഅത്ത് കമ്മിറ്റിയിൽ നിന്നുള്ള ഒരു അറിയിപ്പാണിത്. നിങ്ങളുടെ കുടിശ്ശിക വിവരങ്ങൾ താഴെ നൽകുന്നു:
+
+📍 കുടിശ്ശിക വിവരങ്ങൾ:
+▫️ മാസവരി ഇനം: ₹${family.monthly_arrears.toLocaleString()}
+▫️ മറ്റ് കുടിശ്ശികകൾ: ₹${family.sponsorship_pending.toLocaleString()}
+💰 ആകെ തുക: ₹${family.total_arrears.toLocaleString()}
+
+മേൽ പറഞ്ഞ തുക കമ്മിറ്റി ഭാരവാഹികളെയോ അല്ലെങ്കിൽ താഴെ കാണുന്ന G-Pay നമ്പറിലേക്കോ അയച്ച് സഹകരിക്കണമെന്ന് വിനീതമായി അഭ്യർത്ഥിക്കുന്നു.
+
+📲 G-Pay Number: 8891285093
+(പേയ്മെന്റ് ചെയ്ത ശേഷം ദയവായി സ്ക്രീൻഷോട്ട് അയക്കുക.)
+
+നമ്മുടെ മസ്ജിദിന്റെ പുരോഗതിക്കായി നിങ്ങളുടെ സഹകരണം അത്യന്താപേക്ഷിതമാണ്. പടച്ചവൻ നമ്മുടെ സ്വദഖകൾ സ്വീകരിക്കട്ടെ. ആമീൻ... 🤲
+
+വെസ്റ്റ് മുളവൂർ മഹല്ല് ജമാഅത്ത് കമ്മിറ്റി ✨`;
 
         const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
@@ -184,7 +195,7 @@ Please clear the dues at your earliest convenience. Thank you.`;
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
-                    <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">WhatsApp Reminders</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-mahallu-dark">വാട്സാപ്പ് റിമൈൻഡറുകൾ</h2>
                     <p className="text-muted-foreground">Send payment reminders to families with pending arrears.</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -213,7 +224,7 @@ Please clear the dues at your earliest convenience. Thank you.`;
                         <TableHeader className="bg-slate-50/50">
                             <TableRow className="hover:bg-transparent border-slate-100">
                                 <TableHead className="font-bold py-5 pl-8 text-mahallu-dark">Family</TableHead>
-                                <TableHead className="font-bold py-5 text-mahallu-dark text-right">Monthly Arrears</TableHead>
+                                <TableHead className="font-bold py-5 text-mahallu-dark text-right">മാസവരി കുടിശ്ശിക</TableHead>
                                 <TableHead className="font-bold py-5 text-mahallu-dark text-right">Sponsorship</TableHead>
                                 <TableHead className="font-bold py-5 text-mahallu-dark text-right pr-8">Total Pending</TableHead>
                                 <TableHead className="text-center py-5 font-bold text-mahallu-dark">Action</TableHead>

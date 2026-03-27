@@ -42,19 +42,38 @@ export default function MemberDetailsPage() {
     const fetchMemberData = async () => {
         try {
             setLoading(true);
-            // Get Family ID from user email (family_id@mahallu.local)
-            const familyId = user?.email?.split('@')[0]?.toUpperCase();
+            
+            // Prefer ID from session (now available via local session)
+            const userId = user?.id;
 
-            if (!familyId) throw new Error('Family ID not found in session');
+            if (!userId) throw new Error('Session ID not found');
 
-            // Find Family by family_id
+            // Find Family by ID
             const { data: famData, error: famErr } = await supabase
                 .from('families')
                 .select('*, members(*)')
-                .eq('family_id', familyId)
+                .eq('id', userId)
                 .single();
 
-            if (famErr || !famData) throw new Error('Family not found for this ID');
+            if (famErr || !famData) {
+                // Fallback to family_id string lookup if ID lookup fails
+                const familyIdStr = user?.email?.split('@')[0]?.toUpperCase();
+                if (familyIdStr) {
+                    const { data: fallbackData } = await supabase
+                        .from('families')
+                        .select('*, members(*)')
+                        .eq('family_id', familyIdStr)
+                        .single();
+                    
+                    if (fallbackData) {
+                        setFamily(fallbackData);
+                        setMember(fallbackData.members?.find((m: any) => m.is_head) || fallbackData.members?.[0]);
+                        await processFinanceData(fallbackData.id, fallbackData);
+                        return;
+                    }
+                }
+                throw new Error('Family profile not found');
+            }
 
             setFamily(famData);
             setMember(famData.members?.find((m: any) => m.is_head) || famData.members?.[0]);
@@ -173,8 +192,8 @@ export default function MemberDetailsPage() {
                     </h2>
                     <p className="text-muted-foreground">
                         {role === 'member'
-                            ? `Welcome back! Here is your current financial status for ${family.house_name}.`
-                            : `Detailed financial status and arrears overview for ${family.house_name}.`
+                            ? <span>Welcome back! Here is your current financial status for <span className="font-bold text-black">{family.house_name}</span>.</span>
+                            : <span>Detailed financial status and arrears overview for <span className="font-bold text-black">{family.house_name}</span>.</span>
                         }
                     </p>
                 </div>
@@ -189,11 +208,11 @@ export default function MemberDetailsPage() {
                         <Wallet size={80} className="text-emerald-600" />
                     </div>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Monthly Arrears</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">മാസവരി കുടിശ്ശിക</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-black text-emerald-600">₹{arrearsInfo?.totalPending.toLocaleString() || '0'}</div>
-                        <p className="text-xs text-muted-foreground mt-1 font-medium">pending subscription dues</p>
+                        <p className="text-xs text-muted-foreground mt-1 font-medium">മാസവരി കുടിശ്ശികങ്ങൾ</p>
                     </CardContent>
                 </Card>
 
@@ -222,7 +241,7 @@ export default function MemberDetailsPage() {
                             {arrearsInfo?.lastPayment ? `₹${Number(arrearsInfo.lastPayment.amount).toLocaleString()}` : 'No Record'}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1 font-medium">
-                            {arrearsInfo?.lastPayment ? new Date(arrearsInfo.lastPayment.transaction_date).toLocaleDateString() : 'no transaction found'}
+                            {arrearsInfo?.lastPayment ? new Date(arrearsInfo.lastPayment.transaction_date).toLocaleDateString() : 'വിവരങ്ങൾ ലഭ്യമല്ല'}
                         </p>
                     </CardContent>
                 </Card>
@@ -234,7 +253,7 @@ export default function MemberDetailsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Clock className="h-5 w-5 text-mahallu-primary" />
-                            Pending Arrears Breakdown
+                            മാസവരി കുടിശ്ശിക വിവരങ്ങൾ
                         </CardTitle>
                         <CardDescription>Estimated months remaining since membership started.</CardDescription>
                     </CardHeader>
@@ -249,7 +268,7 @@ export default function MemberDetailsPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-700">{m.month} {m.year}</p>
-                                                <p className="text-xs text-muted-foreground">Monthly Subscription Fee</p>
+                                                <p className="text-xs text-muted-foreground">മാസവരി തുക</p>
                                             </div>
                                         </div>
                                         <Badge className="bg-rose-50 text-rose-600 border-none px-3 font-black">₹{family.subscription_amount}</Badge>
@@ -329,7 +348,7 @@ export default function MemberDetailsPage() {
                     <div className="space-y-1">
                         <h3 className="text-xl font-bold">Important Information</h3>
                         <p className="text-mahallu-light/60 text-sm leading-relaxed max-w-2xl">
-                            The arrears shown above are calculated based on your membership start date.
+                            മാസവരി ആരംഭിച്ച തീയതി അടിസ്ഥാനമാക്കിയാണ് ഇത് കണക്കാക്കുന്നത്.
                             Legacy arrears from previous years are also included in the total pending amount.
                             If you notice any discrepancies, please present your receipts at the office.
                         </p>

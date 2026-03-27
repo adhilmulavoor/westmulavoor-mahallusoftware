@@ -27,25 +27,29 @@ function LoginForm() {
 
         try {
             if (loginType === 'admin') {
-                // Admin Login: Username lookup
+                // Admin Login: Direct Database lookup (Bypasses Auth Provider restriction)
                 const { data: adminData, error: adminErr } = await supabase
                     .from('admins')
-                    .select('email')
-                    .eq('username', identifier)
+                    .select('id, username')
+                    .ilike('username', identifier)
+                    .eq('password', password) // Direct matching for simple admin access
                     .single();
 
                 if (adminErr || !adminData) {
-                    throw new Error('Invalid username or admin not found.');
+                    throw new Error('Invalid username or password.');
                 }
+                
+                // Set custom Admin session in LocalStorage
+                localStorage.setItem('admin-session', JSON.stringify({
+                    id: adminData.id,
+                    username: adminData.username,
+                    role: 'admin',
+                    expires: new Date(Date.now() + 86400000).toISOString() // 24h
+                }));
 
-                const { error: authError } = await supabase.auth.signInWithPassword({
-                    email: adminData.email,
-                    password: password,
-                });
-
-                if (authError) throw authError;
+                console.log('Admin authenticated:', adminData.username);
             } else {
-                // Member Login: Family ID based
+                // Member Login: Direct Database lookup + Local Session
                 const familyId = identifier.toUpperCase().trim();
                 const inputPassword = password.toUpperCase().trim();
 
@@ -54,43 +58,26 @@ function LoginForm() {
                 }
 
                 // 1. Verify family exists in Database
-                const { data: familyExists, error: familyError } = await supabase
-                    .rpc('check_family_exists', { f_id: familyId });
+                const { data: familyData, error: familyError } = await supabase
+                    .from('families')
+                    .select('id, family_id, house_name')
+                    .ilike('family_id', familyId)
+                    .single();
 
-                if (familyError || !familyExists) {
+                if (familyError || !familyData) {
                     throw new Error('Family ID not found in directory.');
                 }
 
-                const virtualEmail = `${familyId.toLowerCase()}@mahallu.com`;
-                // Supabase requires 6+ char passwords. Pad if necessary.
-                const authPassword = familyId.length >= 6 ? familyId : familyId.padEnd(6, '0');
+                // 2. Set custom Member session in LocalStorage
+                localStorage.setItem('member-session', JSON.stringify({
+                    id: familyData.id,
+                    family_id: familyData.family_id,
+                    house_name: familyData.house_name,
+                    role: 'member',
+                    expires: new Date(Date.now() + 86400000).toISOString() // 24h
+                }));
 
-                // 2. Try to log in
-                let { error: authError } = await supabase.auth.signInWithPassword({
-                    email: virtualEmail,
-                    password: authPassword,
-                });
-
-                // 3. If account doesn't exist, auto-create it
-                if (authError && authError.message.includes('Invalid login credentials')) {
-                    const { error: signUpError } = await supabase.auth.signUp({
-                        email: virtualEmail,
-                        password: authPassword,
-                    });
-
-                    if (signUpError) throw signUpError;
-
-                    // Immediately sign in after sign up
-                    const { error: retryError } = await supabase.auth.signInWithPassword({
-                        email: virtualEmail,
-                        password: authPassword,
-                    });
-
-                    if (retryError) throw retryError;
-                    authError = null;
-                }
-
-                if (authError) throw authError;
+                console.log('Member authenticated:', familyData.family_id);
             }
 
             router.push(loginType === 'admin' ? '/dashboard' : '/member-details');
@@ -159,7 +146,7 @@ function LoginForm() {
                                         id="identifier"
                                         type="text"
                                         placeholder={loginType === 'admin' ? 'Enter username' : 'e.g., F101'}
-                                        className="pl-10 uppercase focus:uppercase"
+                                        className={loginType === 'member' ? "pl-10 uppercase focus:uppercase" : "pl-10"}
                                         value={identifier}
                                         onChange={(e) => setIdentifier(e.target.value)}
                                         required

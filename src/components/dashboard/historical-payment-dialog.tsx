@@ -152,17 +152,44 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
     };
 
     const handleDeletePaidMonth = async (txId: string) => {
-        if (!confirm('Are you sure you want to remove this paid month? It will be marked as unpaid again.')) return;
+        // Log to console immediately for debugging
+        console.log('--- Handle Delete Paid Month Called ---');
+        console.log('Target Transaction ID:', txId);
+        
         setLoading(true);
         try {
-            const { error } = await supabase.from('transactions').delete().eq('id', txId);
-            if (error) throw error;
+            const { data, error } = await supabase
+                .from('transactions')
+                .delete()
+                .eq('id', txId)
+                .select();
+
+            if (error) {
+                console.error('Supabase Delete Error:', error);
+                alert(`Database Error: ${error.message}`);
+                return;
+            }
+
+            console.log('Delete Response Data:', data);
+            
+            if (!data || data.length === 0) {
+                console.warn('No records were deleted. Possible RLS or missing ID issue.');
+                alert('Could not delete: The record may have already been removed or access was denied.');
+            } else {
+                console.log('Successfully deleted record:', data[0]);
+                // Optimistic UI update
+                setPaidMonths(prev => prev.filter(m => m.txId !== txId));
+            }
+            
+            // Sync with backend
             await fetchData();
+            
         } catch (error: any) {
-            console.error('Error removing paid month:', error);
-            alert(`Error: ${error.message}`);
+            console.error('Crash in handleDeletePaidMonth:', error);
+            alert(`Application Error: ${error.message}`);
         } finally {
             setLoading(false);
+            console.log('--- Handle Delete Paid Month Finished ---');
         }
     };
 
@@ -199,7 +226,7 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
                 .insert([{
                     family_id: family.id,
                     amount: finalAmount,
-                    category: 'Sponsorship',
+                    category: 'Project Sponsorship',
                     sponsorship_id: sponsorship.id,
                     transaction_date: now.split('T')[0],
                     notes: 'Historical Record (Onboarding)'
@@ -231,7 +258,7 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold tracking-tight">Mark Historical Payments</DialogTitle>
                         <DialogDescription className="text-mahallu-light/80 text-sm mt-1 max-w-sm">
-                            Fast onboarding tool to mark past Masavari or Sponsorships as paid for <span className="text-white font-bold">{family.house_name}</span>.
+                            ഫാസ്റ്റ് ഓൺബോർഡിംഗ് ടൂൾ വഴി <span className="text-white font-bold">{family.house_name}</span> കുടുംബത്തിന്റെ മാസവരി അല്ലെങ്കിൽ സ്പോൺസർഷിപ്പ് കുടിശ്ശികകൾ രേഖപ്പെടുത്തുക.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
@@ -249,7 +276,7 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
                                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                                         <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                                        Masavari (Monthly Subscriptions)
+                                        മാസവരി (Masavari)
                                     </h3>
                                     <Badge variant="outline" className="bg-white border-slate-200 text-slate-600">
                                         ₹{family.subscription_amount}/mo
@@ -293,7 +320,7 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
                                 ) : (
                                     <div className="bg-white p-6 rounded-2xl border border-slate-100 text-center">
                                         <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2 opacity-50" />
-                                        <p className="text-slate-500 font-medium">All pending Masavari months are indicated as paid.</p>
+                                        <p className="text-slate-500 font-medium">എല്ലാ മാസവരി കുടിശ്ശികകളും അടച്ചുതീർത്തു.</p>
                                     </div>
                                 )}
 
@@ -307,16 +334,25 @@ export function HistoricalPaymentDialog({ family, open, onOpenChange, onSuccess 
                                             {paidMonths.map(m => (
                                                 <div
                                                     key={m.txId}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 bg-white rounded-lg shadow-sm"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 bg-white rounded-lg shadow-sm hover:border-red-200 transition-colors"
                                                 >
                                                     <span className="text-sm font-medium text-slate-600">{m.month} {m.year}</span>
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleDeletePaidMonth(m.txId)}
-                                                        className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full p-0.5 transition-colors"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleDeletePaidMonth(m.txId);
+                                                        }}
+                                                        disabled={loading}
+                                                        className={`ml-1 -mr-1 p-1.5 rounded-full transition-all ${loading ? 'opacity-50 cursor-not-allowed' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'}`}
                                                         title="Remove this mistaken paid month"
                                                     >
-                                                        <X className="h-3.5 w-3.5" />
+                                                        {loading ? (
+                                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                                        ) : (
+                                                            <X className="h-3.5 w-3.5" />
+                                                        )}
                                                     </button>
                                                 </div>
                                             ))}

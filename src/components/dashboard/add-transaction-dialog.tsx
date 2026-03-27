@@ -29,14 +29,28 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Receipt, Search, Loader2, CheckCircle2 } from 'lucide-react';
+import { Receipt, Search, Loader2, CheckCircle2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const transactionSchema = z.object({
     family_id: z.string().min(1, 'Family selection is required'),
     amount: z.string().min(1, 'Amount is required'),
-    category: z.enum(['Monthly Subscription', 'Sponsorship', 'General Hadya']),
+    category: z.enum(['Monthly Subscription', 'Project Sponsorship', 'General Hadya', 'Legacy Arrears']),
     sponsorship_id: z.string().optional(),
     notes: z.string().optional(),
     transaction_date: z.string().min(1, 'Date is required'),
@@ -47,7 +61,7 @@ type TransactionFormValues = z.infer<typeof transactionSchema>;
 interface AddTransactionDialogProps {
     children?: React.ReactNode;
     onSuccess: () => void;
-    defaultCategory?: 'Monthly Subscription' | 'Sponsorship' | 'General Hadya';
+    defaultCategory?: 'Monthly Subscription' | 'Project Sponsorship' | 'General Hadya' | 'Legacy Arrears';
     defaultFamilyId?: string;
     defaultSponsorshipId?: string;
     fixedCategory?: boolean;
@@ -59,6 +73,7 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
     const [families, setFamilies] = useState<Family[]>([]);
     const [sponsorships, setSponsorships] = useState<any[]>([]);
     const [fetchingFamilies, setFetchingFamilies] = useState(false);
+    const [familyPopoverOpen, setFamilyPopoverOpen] = useState(false);
 
     // Multi-month state
     const [unpaidMonths, setUnpaidMonths] = useState<{ id: string; month: string; monthNum: number; year: number }[]>([]);
@@ -78,7 +93,7 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
     });
 
     const category = form.watch('category');
-    const selectedFamily = form.watch('family_id');
+    const selectedFamilyId = form.watch('family_id');
 
     useEffect(() => {
         if (open) {
@@ -103,16 +118,16 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
     }, [open, defaultFamilyId, defaultCategory, defaultSponsorshipId, form]);
 
     useEffect(() => {
-        if (category === 'Sponsorship' && selectedFamily) {
-            fetchSponsorships(selectedFamily);
+        if (category === 'Project Sponsorship' && selectedFamilyId) {
+            fetchSponsorships(selectedFamilyId);
         }
-        if (category === 'Monthly Subscription' && selectedFamily) {
-            fetchUnpaidMonths(selectedFamily);
+        if (category === 'Monthly Subscription' && selectedFamilyId) {
+            fetchUnpaidMonths(selectedFamilyId);
         } else {
             setUnpaidMonths([]);
             setSelectedMonths([]);
         }
-    }, [category, selectedFamily]);
+    }, [category, selectedFamilyId]);
 
     // Update form amount automatically based on selected months for subscriptions
     useEffect(() => {
@@ -125,9 +140,14 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
         setFetchingFamilies(true);
         const { data, error } = await supabase
             .from('families')
-            .select('*')
-            .order('house_name');
-        if (!error && data) setFamilies(data);
+            .select('*');
+        if (!error && data) {
+            // Sort numerically by family_id
+            const sorted = data.sort((a, b) =>
+                (a.family_id || '').localeCompare(b.family_id || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            setFamilies(sorted);
+        }
         setFetchingFamilies(false);
     };
 
@@ -135,9 +155,17 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
         const { data, error } = await supabase
             .from('sponsorships')
             .select('*')
-            .eq('family_id', familyId)
-            .neq('status', 'Completed');
-        if (!error && data) setSponsorships(data);
+            .eq('family_id', familyId);
+        
+        if (!error && data) {
+            // Sort by status (non-completed first) then by name
+            const sorted = data.sort((a, b) => {
+                if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+                if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+                return a.project_name.localeCompare(b.project_name);
+            });
+            setSponsorships(sorted);
+        }
     };
 
     const fetchUnpaidMonths = async (familyId: string) => {
@@ -187,6 +215,18 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
         setSelectedMonths(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
     };
 
+    const selectedSponsorship = sponsorships.find(s => s.id === form.watch('sponsorship_id'));
+
+    // Update amount when sponsorship is selected
+    useEffect(() => {
+        if (category === 'Project Sponsorship' && selectedSponsorship) {
+            const remaining = Number(selectedSponsorship.total_amount) - Number(selectedSponsorship.paid_amount);
+            if (remaining > 0) {
+                form.setValue('amount', remaining.toString());
+            }
+        }
+    }, [selectedSponsorship, category, form]);
+
     const onSubmit = async (values: TransactionFormValues) => {
         setLoading(true);
 
@@ -223,7 +263,7 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                 payment_year: null,
             };
 
-            if (values.category !== 'Sponsorship') {
+            if (values.category !== 'Project Sponsorship') {
                 delete insertData.sponsorship_id;
             } else if (values.sponsorship_id) {
                  // Handle Sponsorship Automation
@@ -271,6 +311,8 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
         setLoading(false);
     };
 
+    const selectedFamily = families.find(f => f.id === selectedFamilyId);
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             {children && <DialogTrigger asChild>{children}</DialogTrigger>}
@@ -290,26 +332,65 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                 <div className="p-8 bg-white max-h-[70vh] overflow-y-auto scrollbar-hide">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                            {/* Family Searchable Combobox */}
                             <FormField
                                 control={form.control}
                                 name="family_id"
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                         <FormLabel className="text-slate-600 font-semibold">House / Family</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="h-11 rounded-lg border-slate-200">
-                                                    <SelectValue placeholder={fetchingFamilies ? "Loading families..." : "Select family"} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="rounded-xl border-slate-100 shadow-premium">
-                                                {families.map((family) => (
-                                                    <SelectItem key={family.id} value={family.id}>
-                                                        {family.house_name} ({family.family_id})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <Popover open={familyPopoverOpen} onOpenChange={setFamilyPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn(
+                                                            "w-full h-11 justify-between rounded-lg border-slate-200 font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                        disabled={fetchingFamilies}
+                                                    >
+                                                        {selectedFamily
+                                                            ? <span><span className="text-xs text-slate-400 font-mono mr-2">{selectedFamily.family_id}</span>{selectedFamily.house_name}</span>
+                                                            : (fetchingFamilies ? "Loading families..." : "Search by ID or name...")}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[436px] p-0 rounded-xl shadow-premium border-slate-100" align="start">
+                                                <Command>
+                                                    <CommandInput placeholder="Search by family ID or name..." className="h-11" />
+                                                    <CommandList className="max-h-64 scrollbar-hide">
+                                                        <CommandEmpty>No family found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {families.map((f) => (
+                                                                <CommandItem
+                                                                    key={f.id}
+                                                                    value={`${f.family_id} ${f.house_name}`}
+                                                                    onSelect={() => {
+                                                                        field.onChange(f.id);
+                                                                        setFamilyPopoverOpen(false);
+                                                                    }}
+                                                                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-slate-50"
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "h-4 w-4 shrink-0 text-mahallu-primary",
+                                                                            field.value === f.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <span className="inline-flex items-center justify-center min-w-[2.5rem] h-6 px-1.5 rounded bg-slate-100 text-xs font-mono font-bold text-slate-500">
+                                                                        {f.family_id}
+                                                                    </span>
+                                                                    <span className="text-sm text-slate-800 font-medium">{f.house_name}</span>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -328,9 +409,10 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent className="rounded-xl border-slate-100 shadow-premium">
-                                                <SelectItem value="Monthly Subscription">Monthly Subscription (Masappadi)</SelectItem>
-                                                <SelectItem value="Sponsorship">Project Sponsorship</SelectItem>
+                                                <SelectItem value="Monthly Subscription">മാസവരി</SelectItem>
+                                                <SelectItem value="Project Sponsorship">Project Sponsorship</SelectItem>
                                                 <SelectItem value="General Hadya">General Hadya (Donation)</SelectItem>
+                                                <SelectItem value="Legacy Arrears">Legacy Arrears Payment</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -338,10 +420,10 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                                 )}
                             />
 
-                            {category === 'Monthly Subscription' && selectedFamily && (
+                            {category === 'Monthly Subscription' && selectedFamilyId && (
                                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                     <FormLabel className="text-slate-600 font-semibold flex justify-between">
-                                        <span>Select Unpaid Months</span>
+                                        <span>കുടിശ്ശിക മാസങ്ങൾ തിരഞ്ഞെടുക</span>
                                         <span className="text-xs text-mahallu-primary font-bold">
                                             {selectedMonths.length} selected
                                         </span>
@@ -368,37 +450,61 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                                         </div>
                                     ) : (
                                         <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-medium border border-emerald-100 flex items-center gap-2">
-                                            <CheckCircle2 className="h-4 w-4" /> All previous months indicate paid!
+                                            <CheckCircle2 className="h-4 w-4" /> എല്ലാ മാസത്തെയും മാസവരി അടച്ചു കഴിഞ്ഞു!
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {category === 'Sponsorship' && (
-                                <FormField
-                                    control={form.control}
-                                    name="sponsorship_id"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-slate-600 font-semibold">Select Project Sponsorship</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="h-11 rounded-lg border-slate-200">
-                                                        <SelectValue placeholder={sponsorships.length > 0 ? "Select sponsorship" : "No active sponsorships"} />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-xl border-slate-100 shadow-premium">
-                                                    {sponsorships.map((s) => (
-                                                        <SelectItem key={s.id} value={s.id}>
-                                                            {s.project_name} (₹{s.total_amount - s.paid_amount} remaining)
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
+                            {category === 'Project Sponsorship' && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="sponsorship_id"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className="text-slate-600 font-semibold text-xs uppercase tracking-wider">Target Project Commitment</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger className="h-11 rounded-lg border-slate-200 bg-slate-50/30">
+                                                            <SelectValue placeholder={sponsorships.length > 0 ? "Select sponsorship" : "No active sponsorships found"} />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent className="rounded-xl border-slate-100 shadow-premium max-h-[250px]">
+                                                        {sponsorships.map((s) => (
+                                                            <SelectItem key={s.id} value={s.id} className="py-2.5">
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold">{s.project_name}</span>
+                                                                    <span className="text-[10px] text-slate-400">
+                                                                        {s.status} • Total ₹{s.total_amount}
+                                                                    </span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {selectedSponsorship && (
+                                        <div className="grid grid-cols-3 gap-2 p-3.5 rounded-xl bg-slate-50 border border-slate-100 shadow-inner">
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] uppercase font-bold text-slate-400">Total</span>
+                                                <span className="font-bold text-sm text-slate-700">₹{selectedSponsorship.total_amount}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] uppercase font-bold text-slate-400">Paid So Far</span>
+                                                <span className="font-bold text-sm text-mahallu-primary">₹{selectedSponsorship.paid_amount}</span>
+                                            </div>
+                                            <div className="flex flex-col border-l border-slate-200 pl-3">
+                                                <span className="text-[9px] uppercase font-bold text-orange-500">Balance</span>
+                                                <span className="font-black text-sm text-rose-600">₹{Number(selectedSponsorship.total_amount) - Number(selectedSponsorship.paid_amount)}</span>
+                                            </div>
+                                        </div>
                                     )}
-                                />
+                                </div>
                             )}
 
                             <div className="grid grid-cols-2 gap-4">
@@ -407,7 +513,7 @@ export function AddTransactionDialog({ children, onSuccess, defaultCategory, def
                                     name="amount"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-slate-600 font-semibold">Total Amount (₹)</FormLabel>
+                                            <FormLabel className="text-slate-600 font-semibold">ആകെ അടച്ച തുക (₹)</FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="500" className="h-11 rounded-lg border-slate-200" {...field} />
                                             </FormControl>

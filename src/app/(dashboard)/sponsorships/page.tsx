@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddTransactionDialog } from '@/components/dashboard/add-transaction-dialog';
 import { AddSponsorshipDialog } from '@/components/dashboard/add-sponsorship-dialog';
+import { EditSponsorshipDialog } from '@/components/dashboard/edit-sponsorship-dialog';
 
 export default function SponsorshipsPage() {
     const [projects, setProjects] = useState<SponsorshipProject[]>([]);
@@ -343,26 +344,32 @@ export default function SponsorshipsPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right py-4 pr-8">
-                                            {Number(s.paid_amount) < Number(s.total_amount) ? (
-                                                <AddTransactionDialog
-                                                    onSuccess={fetchData}
-                                                    defaultCategory="Sponsorship"
-                                                    fixedCategory={true}
-                                                    defaultFamilyId={s.family_id}
-                                                    defaultSponsorshipId={s.id}
-                                                >
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
-                                                        className="rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50"
+                                            <div className="flex items-center justify-end gap-2">
+                                                {Number(s.paid_amount) < Number(s.total_amount) ? (
+                                                    <AddTransactionDialog
+                                                        onSuccess={fetchData}
+                                                        defaultCategory="Project Sponsorship"
+                                                        fixedCategory={true}
+                                                        defaultFamilyId={s.family_id}
+                                                        defaultSponsorshipId={s.id}
                                                     >
-                                                        <HandCoins className="h-4 w-4 mr-2" />
-                                                        Collect
-                                                    </Button>
-                                                </AddTransactionDialog>
-                                            ) : (
-                                                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none">Completed</Badge>
-                                            )}
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm" 
+                                                            className="rounded-lg border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                        >
+                                                            <HandCoins className="h-4 w-4 mr-2" />
+                                                            Collect
+                                                        </Button>
+                                                    </AddTransactionDialog>
+                                                ) : (
+                                                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none">Completed</Badge>
+                                                )}
+                                                <EditSponsorshipDialog 
+                                                    sponsorship={s} 
+                                                    onSuccess={fetchData} 
+                                                />
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))

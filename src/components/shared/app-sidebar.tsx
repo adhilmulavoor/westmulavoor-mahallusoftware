@@ -1,6 +1,7 @@
 'use client';
 
-import Image from 'next/image';import {
+import Image from 'next/image';
+import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -11,6 +12,7 @@ import Image from 'next/image';import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import {
     LayoutDashboard,
@@ -23,7 +25,7 @@ import {
     WalletCards,
     ClockAlert,
     Megaphone,
-    ShieldCheck,
+
     Receipt,
     User,
     HandHeart,
@@ -39,12 +41,10 @@ const adminItems = [
     { title: 'Arrear Checker', url: '/arrear-checker', icon: ClockAlert },
     { title: 'Directory', url: '/directory', icon: Users },
     { title: 'WhatsApp Reminders', url: '/whatsapp-reminders', icon: MessageCircle },
-    { title: 'Subscriptions', url: '/subscriptions', icon: WalletCards },
+    { title: 'മാസവരി', url: '/subscriptions', icon: WalletCards },
     { title: 'Sponsorships', url: '/sponsorships', icon: HandHeart },
-    { title: 'Finances', url: '/finances', icon: Wallet },
-    { title: 'Expenses', url: '/expenses', icon: Receipt },
     { title: 'Announcements', url: '/notices', icon: Megaphone },
-    { title: 'Committee', url: '/committee', icon: ShieldCheck },
+
 ];
 
 const memberItems = [
@@ -58,9 +58,15 @@ export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { role, loading } = useAuth();
+    const { setOpenMobile } = useSidebar();
 
     const handleLogout = async () => {
+        // 1. Clear Supabase session
         await supabase.auth.signOut();
+        // 2. Clear local sessions
+        localStorage.removeItem('admin-session');
+        localStorage.removeItem('member-session');
+        // 3. Redirect to login
         router.push('/login');
     };
 
@@ -80,15 +86,14 @@ export function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader className="border-b p-5">
-                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity" onClick={() => setOpenMobile(false)}>
                     <div className="relative h-10 w-10 min-w-10 rounded-full overflow-hidden shadow-sm border border-slate-200 bg-white">
                         <Image src="/logo.png" alt="Mahallu Logo" fill className="object-cover" />
                     </div>
                     <div className="flex flex-col">
                         <span className="font-bold text-sm leading-tight text-white">
-                            {role === 'admin' ? 'Admin' : 'Member Portal'}
+                            {role === 'admin' ? 'Admin Portal' : 'Member Portal'}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-medium">West Mulavoor</span>
                     </div>
                 </Link>
             </SidebarHeader>
@@ -106,7 +111,11 @@ export function AppSidebar() {
                                             isActive={isActive}
                                             tooltip={item.title}
                                         >
-                                            <Link href={item.url} className={`flex items-center gap-3 px-3 py-2.5 mx-1 rounded-xl transition-all ${isActive ? 'bg-mahallu-primary text-white font-semibold shadow-sm' : 'hover:bg-mahallu-light hover:text-mahallu-primary'}`}>
+                                            <Link
+                                                href={item.url}
+                                                onClick={() => setOpenMobile(false)}
+                                                className={`flex items-center gap-3 px-3 py-2.5 mx-1 rounded-xl transition-all ${isActive ? 'bg-mahallu-primary text-white font-semibold shadow-sm' : 'hover:bg-mahallu-light hover:text-mahallu-primary'}`}
+                                            >
                                                 <item.icon className="size-4" />
                                                 <span className="text-sm">{item.title}</span>
                                             </Link>

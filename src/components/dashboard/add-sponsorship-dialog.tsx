@@ -29,9 +29,23 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Briefcase, Loader2 } from 'lucide-react';
+import { Briefcase, Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const sponsorshipSchema = z.object({
     family_id: z.string().min(1, 'Family selection is required'),
@@ -53,6 +67,7 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
     const [loading, setLoading] = useState(false);
     const [families, setFamilies] = useState<Family[]>([]);
     const [projects, setProjects] = useState<any[]>([]);
+    const [familyPopoverOpen, setFamilyPopoverOpen] = useState(false);
 
     const form = useForm<SponsorshipFormValues>({
         resolver: zodResolver(sponsorshipSchema) as any,
@@ -75,8 +90,14 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
     }, [open, defaultFamilyId, form]);
 
     const fetchFamilies = async () => {
-        const { data, error } = await supabase.from('families').select('*').order('house_name');
-        if (!error && data) setFamilies(data);
+        const { data, error } = await supabase.from('families').select('*');
+        if (!error && data) {
+            // Sort numerically by family_id
+            const sorted = data.sort((a, b) =>
+                (a.family_id || '').localeCompare(b.family_id || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+            setFamilies(sorted);
+        }
     };
 
     const fetchProjects = async () => {
@@ -120,7 +141,7 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
                 .insert([{
                     family_id: values.family_id,
                     amount: paid,
-                    category: 'Sponsorship',
+                    category: 'Project Sponsorship',
                     sponsorship_id: spData.id,
                     transaction_date: now.split('T')[0],
                     notes: 'Historical Record (Onboarding)'
@@ -128,7 +149,6 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
             
             if (txError) {
                 console.error("Historical transaction error", txError);
-                // We don't abort since sponsorship was created, but we could notify
             }
         }
 
@@ -137,6 +157,8 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
         setOpen(false);
         setLoading(false);
     };
+
+    const selectedFamily = families.find(f => f.id === form.watch('family_id'));
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -154,24 +176,64 @@ export function AddSponsorshipDialog({ children, onSuccess, defaultFamilyId }: A
                 <div className="p-8 bg-white">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                            {/* Family Searchable Combobox */}
                             <FormField
                                 control={form.control}
                                 name="family_id"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-slate-600 font-semibold">House / Family</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="h-11 rounded-lg">
-                                                    <SelectValue placeholder="Select family" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="rounded-xl">
-                                                {families.map((f) => (
-                                                    <SelectItem key={f.id} value={f.id}>{f.house_name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <Popover open={familyPopoverOpen} onOpenChange={setFamilyPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn(
+                                                            "w-full h-11 justify-between rounded-lg font-normal",
+                                                            !field.value && "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {selectedFamily
+                                                            ? <span><span className="text-xs text-slate-400 font-mono mr-2">{selectedFamily.family_id}</span>{selectedFamily.house_name}</span>
+                                                            : "Search by ID or name..."}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[380px] p-0 rounded-xl shadow-lg" align="start">
+                                                <Command>
+                                                    <CommandInput placeholder="Search by family ID or name..." className="h-10" />
+                                                    <CommandList className="max-h-64">
+                                                        <CommandEmpty>No family found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {families.map((f) => (
+                                                                <CommandItem
+                                                                    key={f.id}
+                                                                    value={`${f.family_id} ${f.house_name}`}
+                                                                    onSelect={() => {
+                                                                        field.onChange(f.id);
+                                                                        setFamilyPopoverOpen(false);
+                                                                    }}
+                                                                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "h-4 w-4 shrink-0 text-mahallu-primary",
+                                                                            field.value === f.id ? "opacity-100" : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <span className="inline-flex items-center justify-center min-w-[2.5rem] h-6 px-1.5 rounded bg-slate-100 text-xs font-mono font-bold text-slate-500">
+                                                                        {f.family_id}
+                                                                    </span>
+                                                                    <span className="text-sm text-slate-800">{f.house_name}</span>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
