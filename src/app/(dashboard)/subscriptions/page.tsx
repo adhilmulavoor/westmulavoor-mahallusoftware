@@ -24,13 +24,6 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { AddTransactionDialog } from '@/components/dashboard/add-transaction-dialog';
 import { ManageLegacyDialog } from '@/components/dashboard/manage-legacy-dialog';
 
@@ -46,7 +39,6 @@ export default function SubscriptionsPage() {
     const [families, setFamilies] = useState<FamilyWithArrears[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
     const fetchData = async () => {
         try {
@@ -170,27 +162,13 @@ export default function SubscriptionsPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-slate-400 uppercase">View History:</span>
-                        <Select value={selectedYear.toString()} onValueChange={(v: string) => setSelectedYear(parseInt(v))}>
-                            <SelectTrigger className="w-28 h-10 rounded-xl border-slate-200 bg-white">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 shadow-premium">
-                                {[2024, 2025, 2026, 2027].map((y) => (
-                                    <SelectItem key={y} value={y.toString()}>{y} Year</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader className="bg-slate-50/50">
                             <TableRow className="hover:bg-transparent border-slate-100">
-                                <TableHead className="font-bold py-5 pl-8 text-mahallu-dark">House / Family</TableHead>
-                                <TableHead className="font-bold py-5 text-mahallu-dark">Payment Grid ({selectedYear})</TableHead>
+                                <TableHead className="font-bold py-5 pl-8 text-mahallu-dark w-1/3">House / Family</TableHead>
                                 <TableHead className="font-bold py-5 text-mahallu-dark text-center">Arrears Balance</TableHead>
                                 <TableHead className="text-right py-5 pr-8 font-bold text-mahallu-dark">Action</TableHead>
                             </TableRow>
@@ -198,7 +176,7 @@ export default function SubscriptionsPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-64 text-center">
+                                    <TableCell colSpan={3} className="h-64 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <Loader2 className="h-8 w-8 animate-spin text-mahallu-primary" />
                                             <p className="text-sm text-muted-foreground">വിവരങ്ങൾ ശേഖരിക്കുന്നു...</p>
@@ -207,7 +185,7 @@ export default function SubscriptionsPage() {
                                 </TableRow>
                             ) : filteredFamilies.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-64 text-center">
+                                    <TableCell colSpan={3} className="h-64 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <CreditCard className="h-8 w-8 text-slate-300" />
                                             <p className="font-semibold">All caught up!</p>
@@ -225,30 +203,6 @@ export default function SubscriptionsPage() {
                                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase">{family.family_id}</span>
                                                     <span className="text-[10px] text-slate-400">Rate: ₹{family.subscription_amount}</span>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="py-5">
-                                            <div className="flex gap-1.5 flex-wrap max-w-[300px]">
-                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => {
-                                                    const isPaid = family.payment_status?.some(p => p.month === m && p.year === selectedYear);
-                                                    const isFuture = new Date(selectedYear, m - 1, 1) > new Date();
-                                                    const monthName = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][m - 1];
-
-                                                    return (
-                                                        <div
-                                                            key={m}
-                                                            title={`${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${selectedYear}: ${isPaid ? 'Paid' : 'Pending'}`}
-                                                            className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all ${isPaid
-                                                                ? 'bg-mahallu-primary text-white shadow-sm'
-                                                                : isFuture
-                                                                    ? 'bg-slate-50 text-slate-300 border border-slate-100'
-                                                                    : 'bg-rose-50 text-rose-500 border border-rose-100 shadow-sm'
-                                                                }`}
-                                                        >
-                                                            {monthName}
-                                                        </div>
-                                                    )
-                                                })}
                                             </div>
                                         </TableCell>
                                         <TableCell className="py-5 text-center">
