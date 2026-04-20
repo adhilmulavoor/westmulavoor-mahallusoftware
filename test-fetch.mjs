@@ -1,5 +1,5 @@
-const url = 'https://zqrpzaoahiritzmhsfkk.supabase.co/rest/v1/families?select=%2A';
-const key = 'sb_publishable_I-njdu8wZAP7KdsxmG_5KA_GziImyUM';
+const url = 'https://snxlocwcauhloekrgwtd.supabase.co/rest/v1/families?select=%2A';
+const key = 'sb_publishable_YyRGxznjP-UmDt0c68N4MQ_yZv23Sh2';
 
 fetch(url, {
   headers: {
